@@ -93,21 +93,11 @@ var _ = Describe("Migration", func() {
 	})
 
 	It("repushes a buildpack app successfully", func() {
-		Expect(cf.Cf("push", os.Getenv("BUILDPACK_APP_TO_REPUSH"), "-p", "../assets/dora").Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+		appName := os.Getenv("BUILDPACK_APP_TO_REPUSH")
+		Expect(cf.Cf("push", appName, "-p", "../assets/dora").Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("APP_WITH_SERVICE_BINDING_NAME"))
-		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
-	})
-
-	It("repushes a buildpack app successfully", func() {
-		Expect(cf.Cf("push", os.Getenv("BUILDPACK_APP_TO_REPUSH"),
-			"-p", "../assets/dora",
-			"-o", "cloudfoundry/diego-docker-app-custom:latest",
-		).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
-
-		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("APP_WITH_SERVICE_BINDING_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 	})
 
@@ -116,11 +106,11 @@ var _ = Describe("Migration", func() {
 			Port string `json:"PORT", json:"port"`
 		}
 
-		Expect(cf.Cf("push", os.Getenv("DOCKER_APP_TO_REPUSH"),
-			"-o", "cloudfoundry/diego-docker-app:latest",
-		).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+		appName := os.Getenv("DOCKER_APP_TO_REPUSH")
 
-		envStr := helpers.CurlApp(os.Getenv("DOCKER_APP_TO_REPUSH"), "/env")
+		Expect(cf.Cf("push", appName, "-o", "cloudfoundry/diego-docker-app:latest").Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+
+		envStr := helpers.CurlApp(appName, "/env")
 
 		env := envStruct{}
 		err := json.Unmarshal([]byte(envStr), &env)
@@ -128,15 +118,14 @@ var _ = Describe("Migration", func() {
 
 		Expect(env.Port).To(Equal("8080"))
 
-		Expect(cf.Cf("push", os.Getenv("DOCKER_APP_TO_REPUSH"),
+		Expect(cf.Cf("push", appName,
 			"-o", "cloudfoundry/diego-docker-app-custom:latest",
 		).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 
-		envStr = helpers.CurlApp(os.Getenv("DOCKER_APP_TO_REPUSH"), "/env")
+		envStr = helpers.CurlApp(appName, "/env")
 		err = json.Unmarshal([]byte(envStr), &env)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(env.Port).To(Equal("7070"))
 	})
-
 })
