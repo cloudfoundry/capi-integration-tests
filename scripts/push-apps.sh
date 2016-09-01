@@ -143,10 +143,10 @@ function main() {
   push_dea_app $DOCKER_APP_TO_REPUSH "-o cloudfoundry/diego-docker-app:latest" false
 
   push_v3_app $V3_APP
-
+  push_v3_app $TASK_APP
   push_v3_app $BUILDPACK_V3_APP_TO_REPUSH
   push_v3_app $DOCKER_V3_APP_TO_REPUSH "-di cloudfoundry/diego-docker-app:latest"
 }
 
-source scripts/app-names-env.sh
+source scripts/setup-env.sh
 main

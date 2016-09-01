@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	. "code.cloudfoundry.org/capi-integration-tests/v3_helpers"
 	"github.com/cloudfoundry-incubator/cf-test-helpers/cf"
 	"github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
 

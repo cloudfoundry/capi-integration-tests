@@ -1,3 +1,6 @@
+export API_ENDPOINT="api.bosh-lite.com"
+export API_DOMAIN="bosh-lite.com"
+export SPACE="test"
 export APP_NAME="meow"
 export APP_WITH_ENV_VARS="meow"
 export APP_WITH_SERVICE_BINDING_NAME="service-app"
@@ -17,3 +20,7 @@ export SERVICE="some-db"
 export SYSLOG_DRAIN_SERVICE="log-drain-service"
 export BUILDPACK_V3_APP_TO_REPUSH="repush-v3-buildpack-app"
 export DOCKER_V3_APP_TO_REPUSH="repush-v3-docker-app"
+export TASK_APP="task-app"
+
+cf enable-feature-flag task_creation
+cf enable-feature-flag diego_docker
