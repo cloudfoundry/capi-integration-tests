@@ -103,17 +103,6 @@ var _ = Describe("Migration", func() {
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 	})
 
-	It("repushes a buildpack app successfully", func() {
-		Expect(cf.Cf("push", os.Getenv("DIEGO_BUILDPACK_APP_TO_REPUSH"),
-			"-p", "../assets/dora",
-			"-o", "cloudfoundry/diego-docker-app-custom:latest",
-		).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
-
-		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("DIEGO_APP_WITH_SERVICE_BINDING_NAME"))
-		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
-	})
-
 	It("repushes a docker app successfully", func() {
 		type envStruct struct {
 			Port string `json:"PORT", json:"port"`
