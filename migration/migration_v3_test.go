@@ -6,7 +6,8 @@ import (
 	"os"
 	"strings"
 
-	. "code.cloudfoundry.org/capi-integration-tests/v3_helpers"
+	. "code.cloudfoundry.org/capi-integration-tests/helpers/resource_helpers"
+	. "code.cloudfoundry.org/capi-integration-tests/helpers/v3_helpers"
 	"github.com/cloudfoundry-incubator/cf-test-helpers/cf"
 	"github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
 
@@ -16,62 +17,10 @@ import (
 	. "github.com/onsi/gomega/gexec"
 )
 
-type appsStruct struct {
-	Resources []appResourceStruct `json:"resources"`
-}
-
-type appResourceStruct struct {
-	Name  string      `json:"name"`
-	Guid  string      `json:"guid"`
-	Links linksStruct `json:"links"`
-}
-
-type packagesStruct struct {
-	Resources []packageResourceStruct `json:"resources"`
-}
-
-type packageResourceStruct struct {
-	Guid string `json:"guid"`
-}
-
-type dropletsStruct struct {
-	Resources []dropletResourceStruct `json:"resources"`
-}
-
-type dropletResourceStruct struct {
-	Guid  string      `json:"guid"`
-	State string      `json:"state"`
-	Links linksStruct `json:"links"`
-}
-
-type taskResourceStruct struct {
-	Guid    string `json:"guid"`
-	Command string `json:"command"`
-	State   string `json:"state"`
-	Name    string `json:"name"`
-}
-
-type routeResourceStruct struct {
-	Metadata MetadataStruct `json:"metadata"`
-}
-
-type routesStruct struct {
-	Resources []routeResourceStruct `json:"resources"`
-}
-
-type linksStruct struct {
-	Self    map[string]string `json:"self"`
-	Droplet map[string]string `json:"droplet"`
-}
-
-type MetadataStruct struct {
-	Guid string `json:"guid"`
-}
-
 func GetV3AppGuid(appName string) string {
 	jsonResponse := cf.Cf("curl", "v3/apps").Wait(DEFAULT_TIMEOUT).Out.Contents()
 
-	apps := appsStruct{}
+	apps := AppsResource{}
 	err := json.Unmarshal(jsonResponse, &apps)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -115,7 +64,7 @@ var _ = Describe("Using v3 endpoints", func() {
 
 		It("can restage the app", func() {
 			packageJsonResponse := cf.Cf("curl", "/v3/apps/"+strings.TrimSpace(string(appGuid))+"/packages").Wait(DEFAULT_TIMEOUT).Out.Contents()
-			packages := packagesStruct{}
+			packages := PackagesStruct{}
 
 			err := json.Unmarshal(packageJsonResponse, &packages)
 			Expect(err).NotTo(HaveOccurred())
@@ -123,7 +72,7 @@ var _ = Describe("Using v3 endpoints", func() {
 			Expect(packages.Resources).To(HaveLen(1))
 			packageGuid := packages.Resources[0].Guid
 
-			droplet := dropletResourceStruct{}
+			droplet := DropletResource{}
 			dropletJsonResponse := cf.Cf("curl", "/v3/packages/"+strings.TrimSpace(string(packageGuid))+"/droplets", "-X", "POST").Wait(DEFAULT_TIMEOUT).Out.Contents()
 
 			err = json.Unmarshal(dropletJsonResponse, &droplet)
@@ -149,7 +98,7 @@ var _ = Describe("Using v3 endpoints", func() {
 			getRoutePath := fmt.Sprintf("/v2/routes?q=host:%s", host)
 			routeBody := cf.Cf("curl", getRoutePath).Wait(DEFAULT_TIMEOUT).Out.Contents()
 
-			var routeJSON routesStruct
+			var routeJSON RoutesResource
 			json.Unmarshal([]byte(routeBody), &routeJSON)
 			routeGuid := routeJSON.Resources[0].Metadata.Guid
 
@@ -250,9 +199,6 @@ var _ = Describe("Using v3 endpoints", func() {
 			webProcess := GetProcessByType(processes, "web")
 			Expect(webProcess.Guid).ToNot(BeEmpty())
 
-			space := os.Getenv("SPACE")
-			CreateAndMapRoute(appGuid, space, os.Getenv("API_DOMAIN"), webProcess.Name)
-
 			StartApp(appGuid)
 
 			Eventually(func() string {
@@ -260,7 +206,47 @@ var _ = Describe("Using v3 endpoints", func() {
 			}, DEFAULT_TIMEOUT).Should(ContainSubstring("Goodbye, I'm Dora"))
 		})
 
-		It("can push and run a new docker image", func() {
+		// This test will fail until app_port gets automatically updated with
+		// the exposed port on the docker image
+		XIt("can push and run a new docker image", func() {
+			type envStruct struct {
+				Port string `json:"PORT", json:"port"`
+			}
+
+			appName = os.Getenv("DOCKER_V3_APP_TO_REPUSH")
+			appGuid = GetV3AppGuid(appName)
+
+			env := envStruct{}
+
+			envStr := helpers.CurlApp(appName, "/env")
+			err := json.Unmarshal([]byte(envStr), &env)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(env.Port).To(Equal("8080"))
+
+			StopApp(appGuid)
+
+			packageGuid := CreateDockerPackage(appGuid, "cloudfoundry/diego-docker-app-custom:latest")
+
+			dropletGuid := StageDockerPackage(packageGuid)
+			WaitForDropletToStage(dropletGuid)
+
+			AssignDropletToApp(appGuid, dropletGuid)
+
+			processes := GetProcesses(appGuid, appName)
+			webProcess := GetProcessByType(processes, "web")
+			Expect(webProcess.Guid).ToNot(BeEmpty())
+
+			StartApp(appGuid)
+
+			Eventually(func() string {
+				envStr = helpers.CurlApp(appName, "/env")
+				return envStr
+			}, DEFAULT_TIMEOUT)
+
+			err = json.Unmarshal([]byte(envStr), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.Port).To(Equal("7070"))
 		})
 	})
 
@@ -275,7 +261,7 @@ var _ = Describe("Using v3 endpoints", func() {
 			postBody := `{"command": "echo 0", "name": "mreow"}`
 			taskJsonResponse := cf.Cf("curl", "/v3/apps/"+strings.TrimSpace(string(appGuid))+"/tasks", "-X", "POST", "-d", postBody).Wait(DEFAULT_TIMEOUT)
 
-			var task taskResourceStruct
+			var task TaskResource
 			Expect(taskJsonResponse).To(Exit(0))
 			err := json.Unmarshal(taskJsonResponse.Out.Contents(), &task)
 			Expect(err).NotTo(HaveOccurred())
