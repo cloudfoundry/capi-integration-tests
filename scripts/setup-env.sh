@@ -22,5 +22,11 @@ export TASK_APP="task-app"
 export SERVICE="some-db"
 export SYSLOG_DRAIN_SERVICE="log-drain-service"
 
+cf api $API_ENDPOINT --skip-ssl-validation
+cf auth admin admin
+cf create-org test
+cf create-space -o test $SPACE
+cf target -o test -s $SPACE
+
 cf enable-feature-flag task_creation
 cf enable-feature-flag diego_docker

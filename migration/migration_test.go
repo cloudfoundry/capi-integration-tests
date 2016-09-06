@@ -127,8 +127,6 @@ var _ = Describe("V2 behavior with DEA backend", func() {
 
 		appName := os.Getenv("DOCKER_APP_TO_REPUSH")
 
-		Expect(cf.Cf("push", appName, "-o", "cloudfoundry/diego-docker-app:latest").Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
-
 		envStr := helpers.CurlApp(appName, "/env")
 
 		env := envStruct{}
@@ -140,6 +138,10 @@ var _ = Describe("V2 behavior with DEA backend", func() {
 		Expect(cf.Cf("push", appName,
 			"-o", "cloudfoundry/diego-docker-app-custom:latest",
 		).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+
+		Eventually(func() string {
+			return helpers.CurlAppRoot(appName)
+		}, CF_PUSH_TIMEOUT).Should(Equal("0"))
 
 		envStr = helpers.CurlApp(appName, "/env")
 		err = json.Unmarshal([]byte(envStr), &env)

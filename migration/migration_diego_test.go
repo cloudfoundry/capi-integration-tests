@@ -107,24 +107,24 @@ var _ = Describe("V2 behavior with diego backend", func() {
 		type envStruct struct {
 			Port string `json:"PORT", json:"port"`
 		}
-
-		Expect(cf.Cf("push", os.Getenv("DIEGO_DOCKER_APP_TO_REPUSH"),
-			"-o", "cloudfoundry/diego-docker-app:latest",
-		).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
-
-		envStr := helpers.CurlApp(os.Getenv("DIEGO_DOCKER_APP_TO_REPUSH"), "/env")
+		appName := os.Getenv("DIEGO_DOCKER_APP_TO_REPUSH")
 
 		env := envStruct{}
+		envStr := helpers.CurlApp(appName, "/env")
 		err := json.Unmarshal([]byte(envStr), &env)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(env.Port).To(Equal("8080"))
 
-		Expect(cf.Cf("push", os.Getenv("DIEGO_DOCKER_APP_TO_REPUSH"),
+		Expect(cf.Cf("push", appName,
 			"-o", "cloudfoundry/diego-docker-app-custom:latest",
 		).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 
-		envStr = helpers.CurlApp(os.Getenv("DIEGO_DOCKER_APP_TO_REPUSH"), "/env")
+		Eventually(func() string {
+			return helpers.CurlAppRoot(appName)
+		}, CF_PUSH_TIMEOUT).Should(Equal("0"))
+
+		envStr = helpers.CurlApp(appName, "/env")
 		err = json.Unmarshal([]byte(envStr), &env)
 		Expect(err).NotTo(HaveOccurred())
 
