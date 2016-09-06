@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	. "code.cloudfoundry.org/capi-integration-tests/helpers/resource_helpers"
 	. "code.cloudfoundry.org/capi-integration-tests/helpers/v3_helpers"
 	"github.com/cloudfoundry-incubator/cf-test-helpers/cf"
 	"github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
@@ -90,9 +91,20 @@ var _ = Describe("V2 behavior with diego backend", func() {
 	})
 
 	It("persists the syslog drain url", func() {
-		appEnv := cf.Cf("env", os.Getenv("DIEGO_APP_WITH_SYSLOG_DRAIN_URL_NAME")).Wait(DEFAULT_TIMEOUT).Out.Contents()
+		appName := os.Getenv("DIEGO_APP_WITH_SYSLOG_DRAIN_URL_NAME")
+		appEnv := cf.Cf("env", appName).Wait(DEFAULT_TIMEOUT).Out.Contents()
+		appGuid := strings.TrimSpace(string(cf.Cf("app", appName, "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()))
+		apiEndpoint := os.Getenv("API_ENDPOINT")
+		expectedSyslogDrainUrl := "logit.io/drain/here"
 
-		Expect(appEnv).To(ContainSubstring("logit.io/drain/here"))
+		Expect(appEnv).To(ContainSubstring(expectedSyslogDrainUrl))
+
+		syslogDrainUrlsResponse := helpers.Curl("bulk_api:bulk-password@" + apiEndpoint + "/v2/syslog_drain_urls").Wait(DEFAULT_TIMEOUT).Out.Contents()
+		var syslogDrainUrls SyslogDrainUrls
+
+		json.Unmarshal([]byte(syslogDrainUrlsResponse), &syslogDrainUrls)
+
+		Expect(syslogDrainUrls.Results[appGuid][0]).To(Equal(expectedSyslogDrainUrl))
 	})
 
 	It("repushes a buildpack app successfully", func() {

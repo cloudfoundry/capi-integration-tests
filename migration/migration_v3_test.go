@@ -127,23 +127,33 @@ var _ = Describe("Using v3 endpoints", func() {
 
 		It("can get a syslog drain url", func() {
 			syslogDrainService := os.Getenv("SYSLOG_DRAIN_SERVICE")
+			apiEndpoint := os.Getenv("API_ENDPOINT")
+			expectedSyslogDrainUrl := "logit.io/drain/here"
+			appGuid = strings.TrimSpace(appGuid)
 
 			Expect(cf.Cf("v3-bind-service", appName, syslogDrainService).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 
-			Expect(cf.Cf("curl", "/v3/apps/"+strings.TrimSpace(appGuid)+"/stop", "-X", "PUT").Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+			Expect(cf.Cf("curl", "/v3/apps/"+appGuid+"/stop", "-X", "PUT").Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 
 			Eventually(func() string {
 				return helpers.CurlAppRoot(appName)
 			}, DEFAULT_TIMEOUT).Should(ContainSubstring("404"))
 
-			Expect(cf.Cf("curl", "/v3/apps/"+strings.TrimSpace(appGuid)+"/start", "-X", "PUT").Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+			Expect(cf.Cf("curl", "/v3/apps/"+appGuid+"/start", "-X", "PUT").Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 			Eventually(func() string {
 				return helpers.CurlAppRoot(appName)
 			}, DEFAULT_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora"))
 
 			Eventually(func() string {
 				return helpers.CurlApp(appName, "/env")
-			}, DEFAULT_TIMEOUT).Should(ContainSubstring("logit.io/drain/here"))
+			}, DEFAULT_TIMEOUT).Should(ContainSubstring(expectedSyslogDrainUrl))
+
+			syslogDrainUrlsResponse := helpers.Curl("bulk_api:bulk-password@" + apiEndpoint + "/v2/syslog_drain_urls").Wait(DEFAULT_TIMEOUT).Out.Contents()
+			var syslogDrainUrls SyslogDrainUrls
+
+			json.Unmarshal([]byte(syslogDrainUrlsResponse), &syslogDrainUrls)
+
+			Expect(syslogDrainUrls.Results[appGuid][0]).To(Equal(expectedSyslogDrainUrl))
 		})
 	})
 

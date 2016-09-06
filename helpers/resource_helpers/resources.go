@@ -51,3 +51,7 @@ type linksStruct struct {
 type MetadataStruct struct {
 	Guid string `json:"guid"`
 }
+
+type SyslogDrainUrls struct {
+	Results map[string][]string `json:"results"`
+}
