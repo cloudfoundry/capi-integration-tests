@@ -23,7 +23,7 @@ var _ = Describe("Using v3 endpoints", func() {
 		var appName string
 
 		BeforeEach(func() {
-			appName = os.Getenv("V3_APP")
+			appName = os.Getenv("APP_TO_RESTART_AND_RESTAGE_WITH_V3")
 			appGuid = string(cf.Cf("app", appName, "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents())
 		})
 
@@ -159,7 +159,7 @@ var _ = Describe("Using v3 endpoints", func() {
 		var appGuid string
 
 		It("can push and run new buildpack bits", func() {
-			appName = os.Getenv("BUILDPACK_V3_APP_TO_REPUSH")
+			appName = os.Getenv("BUILDPACK_APP_TO_REPUSH_WITH_V3")
 
 			Expect(helpers.CurlAppRoot(appName)).To(ContainSubstring("Hi, I'm Dora"))
 
@@ -194,7 +194,7 @@ var _ = Describe("Using v3 endpoints", func() {
 				Port string `json:"PORT", json:"port"`
 			}
 
-			appName = os.Getenv("DOCKER_V3_APP_TO_REPUSH")
+			appName = os.Getenv("DOCKER_APP_TO_REPUSH_WITH_V3")
 			appGuid = strings.TrimSpace(string(cf.Cf("app", appName, "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()))
 
 			env := envStruct{}

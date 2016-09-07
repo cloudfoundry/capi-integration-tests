@@ -85,20 +85,20 @@ function main() {
   push_service_broker
   create_managed_service_instance $SERVICE
 
-  push_dea_app $APP_NAME
-  push_diego_app $DIEGO_APP_NAME
+  push_dea_app $APP
+  push_diego_app $DIEGO_APP
 
-  add_multiple_routes $DIEGO_APP_WITH_MULTIPLE_ROUTES_NAME
-  add_multiple_routes $APP_WITH_MULTIPLE_ROUTES_NAME
+  add_multiple_routes $DIEGO_APP_WITH_MULTIPLE_ROUTES
+  add_multiple_routes $APP_WITH_MULTIPLE_ROUTES
 
   set_env_vars_and_restage $DIEGO_APP_WITH_ENV_VARS
   set_env_vars_and_restage $APP_WITH_ENV_VARS
 
-  bind_service_to_app_and_restage $DIEGO_APP_WITH_SERVICE_BINDING_NAME $SERVICE
-  bind_service_to_app_and_restage $APP_WITH_SERVICE_BINDING_NAME $SERVICE
+  bind_service_to_app_and_restage $DIEGO_APP_WITH_SERVICE_BINDING $SERVICE
+  bind_service_to_app_and_restage $APP_WITH_SERVICE_BINDING $SERVICE
 
-  push_app_with_syslog_drain $DIEGO_APP_WITH_SYSLOG_DRAIN_URL_NAME $SYSLOG_DRAIN_SERVICE true
-  push_app_with_syslog_drain $APP_WITH_SYSLOG_DRAIN_URL_NAME $SYSLOG_DRAIN_SERVICE false
+  push_app_with_syslog_drain $DIEGO_APP_WITH_SYSLOG_DRAIN_URL $SYSLOG_DRAIN_SERVICE true
+  push_app_with_syslog_drain $APP_WITH_SYSLOG_DRAIN_URL $SYSLOG_DRAIN_SERVICE false
 
   push_diego_app $DIEGO_BUILDPACK_APP_TO_REPUSH
   push_dea_app $BUILDPACK_APP_TO_REPUSH
@@ -106,10 +106,10 @@ function main() {
   push_diego_app $DIEGO_DOCKER_APP_TO_REPUSH "-o cloudfoundry/diego-docker-app:latest"
   push_dea_app $DOCKER_APP_TO_REPUSH "-o cloudfoundry/diego-docker-app:latest"
 
-  push_diego_app $V3_APP
+  push_diego_app $APP_TO_RESTART_AND_RESTAGE_WITH_V3
   push_diego_app $TASK_APP
-  push_diego_app $BUILDPACK_V3_APP_TO_REPUSH
-  push_diego_app $DOCKER_V3_APP_TO_REPUSH "-o cloudfoundry/diego-docker-app:latest"
+  push_diego_app $BUILDPACK_APP_TO_REPUSH_WITH_V3
+  push_diego_app $DOCKER_APP_TO_REPUSH_WITH_V3 "-o cloudfoundry/diego-docker-app:latest"
 }
 
 source scripts/setup-env.sh

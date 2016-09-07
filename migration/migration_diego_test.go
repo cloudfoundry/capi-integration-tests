@@ -19,24 +19,26 @@ import (
 
 var _ = Describe("V2 behavior with diego backend", func() {
 	It("can restart the app", func() {
-		Expect(cf.Cf("stop", os.Getenv("DIEGO_APP_NAME")).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+		appName := os.Getenv("DIEGO_APP")
+		Expect(cf.Cf("stop", appName).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("DIEGO_APP_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, DEFAULT_TIMEOUT).Should(ContainSubstring("404"))
 
-		Expect(cf.Cf("start", os.Getenv("DIEGO_APP_NAME")).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+		Expect(cf.Cf("start", appName).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("DIEGO_APP_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 	})
 
 	It("can restage the app", func() {
-		Expect(cf.Cf("restage", os.Getenv("DIEGO_APP_NAME")).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+		appName := os.Getenv("DIEGO_APP")
+		Expect(cf.Cf("restage", appName).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("DIEGO_APP_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 	})
 
@@ -45,7 +47,7 @@ var _ = Describe("V2 behavior with diego backend", func() {
 			TotalResults int `json:"total_results"`
 		}
 
-		appGuid := cf.Cf("app", os.Getenv("DIEGO_APP_WITH_MULTIPLE_ROUTES_NAME"), "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()
+		appGuid := cf.Cf("app", os.Getenv("DIEGO_APP_WITH_MULTIPLE_ROUTES"), "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()
 
 		var appRoutesResponse AppRoutesResponse
 		cfResponse := cf.Cf("curl", "/v2/apps/"+strings.TrimSpace(string(appGuid))+"/routes").Wait(DEFAULT_TIMEOUT).Out.Contents()
@@ -73,25 +75,26 @@ var _ = Describe("V2 behavior with diego backend", func() {
 	})
 
 	It("service bindings are available in env", func() {
-		Expect(cf.Cf("stop", os.Getenv("DIEGO_APP_WITH_SERVICE_BINDING_NAME")).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+		appName := os.Getenv("DIEGO_APP_WITH_SERVICE_BINDING")
+		Expect(cf.Cf("stop", appName).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("DIEGO_APP_WITH_SERVICE_BINDING_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, DEFAULT_TIMEOUT).Should(ContainSubstring("404"))
 
-		Expect(cf.Cf("start", os.Getenv("DIEGO_APP_WITH_SERVICE_BINDING_NAME")).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+		Expect(cf.Cf("start", appName).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("DIEGO_APP_WITH_SERVICE_BINDING_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 
-		appEnv := cf.Cf("env", os.Getenv("DIEGO_APP_WITH_SERVICE_BINDING_NAME")).Wait(DEFAULT_TIMEOUT).Out.Contents()
+		appEnv := cf.Cf("env", appName).Wait(DEFAULT_TIMEOUT).Out.Contents()
 
 		Expect(appEnv).To(ContainSubstring("credentials"))
 	})
 
 	It("persists the syslog drain url", func() {
-		appName := os.Getenv("DIEGO_APP_WITH_SYSLOG_DRAIN_URL_NAME")
+		appName := os.Getenv("DIEGO_APP_WITH_SYSLOG_DRAIN_URL")
 		appEnv := cf.Cf("env", appName).Wait(DEFAULT_TIMEOUT).Out.Contents()
 		appGuid := strings.TrimSpace(string(cf.Cf("app", appName, "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()))
 		apiEndpoint := os.Getenv("API_ENDPOINT")
@@ -108,10 +111,12 @@ var _ = Describe("V2 behavior with diego backend", func() {
 	})
 
 	It("repushes a buildpack app successfully", func() {
-		Expect(cf.Cf("push", os.Getenv("DIEGO_BUILDPACK_APP_TO_REPUSH"), "-p", "../assets/dora").Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+		appName := os.Getenv("DIEGO_BUILDPACK_APP_TO_REPUSH")
+
+		Expect(cf.Cf("push", appName, "-p", "../assets/dora").Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("DIEGO_APP_WITH_SERVICE_BINDING_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 	})
 
@@ -144,7 +149,7 @@ var _ = Describe("V2 behavior with diego backend", func() {
 	})
 
 	It("can ssh to a diego app", func() {
-		appName := os.Getenv("DIEGO_APP_NAME")
+		appName := os.Getenv("DIEGO_APP")
 
 		envCmd := cf.Cf("ssh", "-v", appName, "-c", "/usr/bin/env && /usr/bin/env >&2")
 		Expect(envCmd.Wait(DEFAULT_TIMEOUT)).To(Exit(0))

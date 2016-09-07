@@ -17,16 +17,17 @@ import (
 
 var _ = Describe("V2 behavior with DEA backend", func() {
 	It("can restart the app", func() {
-		Expect(cf.Cf("stop", os.Getenv("APP_NAME")).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+		appName := os.Getenv("APP")
+		Expect(cf.Cf("stop", appName).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("APP_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, DEFAULT_TIMEOUT).Should(ContainSubstring("404"))
 
-		Expect(cf.Cf("start", os.Getenv("APP_NAME")).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+		Expect(cf.Cf("start", appName).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("APP_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 	})
 
@@ -49,10 +50,11 @@ var _ = Describe("V2 behavior with DEA backend", func() {
 	})
 
 	It("can restage the app", func() {
-		Expect(cf.Cf("restage", os.Getenv("APP_NAME")).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+		appName := os.Getenv("APP")
+		Expect(cf.Cf("restage", appName).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("APP_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 	})
 
@@ -61,7 +63,7 @@ var _ = Describe("V2 behavior with DEA backend", func() {
 			TotalResults int `json:"total_results"`
 		}
 
-		appGuid := cf.Cf("app", os.Getenv("APP_WITH_MULTIPLE_ROUTES_NAME"), "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()
+		appGuid := cf.Cf("app", os.Getenv("APP_WITH_MULTIPLE_ROUTES"), "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()
 
 		var appRoutesResponse AppRoutesResponse
 		cfResponse := cf.Cf("curl", "/v2/apps/"+strings.TrimSpace(string(appGuid))+"/routes").Wait(DEFAULT_TIMEOUT).Out.Contents()
@@ -89,25 +91,26 @@ var _ = Describe("V2 behavior with DEA backend", func() {
 	})
 
 	It("service bindings are available in env", func() {
-		Expect(cf.Cf("stop", os.Getenv("APP_WITH_SERVICE_BINDING_NAME")).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
+		appName := os.Getenv("APP_WITH_SERVICE_BINDING")
+		Expect(cf.Cf("stop", appName).Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("APP_WITH_SERVICE_BINDING_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, DEFAULT_TIMEOUT).Should(ContainSubstring("404"))
 
-		Expect(cf.Cf("start", os.Getenv("APP_WITH_SERVICE_BINDING_NAME")).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+		Expect(cf.Cf("start", appName).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
 
 		Eventually(func() string {
-			return helpers.CurlAppRoot(os.Getenv("APP_WITH_SERVICE_BINDING_NAME"))
+			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 
-		appEnv := cf.Cf("env", os.Getenv("APP_WITH_SERVICE_BINDING_NAME")).Wait(DEFAULT_TIMEOUT).Out.Contents()
+		appEnv := cf.Cf("env", appName).Wait(DEFAULT_TIMEOUT).Out.Contents()
 
 		Expect(appEnv).To(ContainSubstring("credentials"))
 	})
 
 	It("persists the syslog drain url", func() {
-		appName := os.Getenv("APP_WITH_SYSLOG_DRAIN_URL_NAME")
+		appName := os.Getenv("APP_WITH_SYSLOG_DRAIN_URL")
 		appEnv := cf.Cf("env", appName).Wait(DEFAULT_TIMEOUT).Out.Contents()
 		appGuid := strings.TrimSpace(string(cf.Cf("app", appName, "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()))
 		apiEndpoint := os.Getenv("API_ENDPOINT")
@@ -130,35 +133,5 @@ var _ = Describe("V2 behavior with DEA backend", func() {
 		Eventually(func() string {
 			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
-	})
-
-	It("repushes a docker app successfully", func() {
-		type envStruct struct {
-			Port string `json:"PORT", json:"port"`
-		}
-
-		appName := os.Getenv("DOCKER_APP_TO_REPUSH")
-
-		envStr := helpers.CurlApp(appName, "/env")
-
-		env := envStruct{}
-		err := json.Unmarshal([]byte(envStr), &env)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(env.Port).To(Equal("8080"))
-
-		Expect(cf.Cf("push", appName,
-			"-o", "cloudfoundry/diego-docker-app-custom:latest",
-		).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
-
-		Eventually(func() string {
-			return helpers.CurlAppRoot(appName)
-		}, CF_PUSH_TIMEOUT).Should(Equal("0"))
-
-		envStr = helpers.CurlApp(appName, "/env")
-		err = json.Unmarshal([]byte(envStr), &env)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(env.Port).To(Equal("7070"))
 	})
 })
