@@ -28,9 +28,6 @@ var _ = Describe("Using v3 endpoints", func() {
 		})
 
 		It("can restart the app", func() {
-			// Use this app guid when actually running the migration before this test
-			// v2 app guid should be migrated to be the v3 app guid also
-
 			Expect(cf.Cf("curl", "/v3/apps/"+strings.TrimSpace(appGuid)+"/stop", "-X", "PUT").Wait(DEFAULT_TIMEOUT)).To(Exit(0))
 
 			Eventually(func() string {
