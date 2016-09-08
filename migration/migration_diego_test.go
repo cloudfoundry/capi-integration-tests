@@ -166,4 +166,20 @@ var _ = Describe("V2 behavior with diego backend", func() {
 		Eventually(cf.Cf("logs", appName, "--recent"), DEFAULT_TIMEOUT).Should(Say("Successful remote access"))
 		Eventually(cf.Cf("events", appName), DEFAULT_TIMEOUT).Should(Say("audit.app.ssh-authorized"))
 	})
+
+	It("persists multiple app ports exposed on an app with health check none", func() {
+		appName := os.Getenv("DIEGO_APP_WITH_MULTIPLE_PORTS")
+		appGuid := cf.Cf("app", appName, "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()
+
+		app := V2App{}
+		cfResponse := cf.Cf("curl", "/v2/apps/"+strings.TrimSpace(string(appGuid))).Wait(DEFAULT_TIMEOUT).Out.Contents()
+		err := json.Unmarshal([]byte(cfResponse), &app)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(app.Entity.Ports).To(ConsistOf(9191, 9090))
+
+		Eventually(func() string {
+			return helpers.CurlAppRoot(appName)
+		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Lattice"))
+	})
 })

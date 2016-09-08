@@ -14,8 +14,9 @@ function push_dea_app() {
 
 function push_diego_app() {
   declare app_name=$1 args=$2
+
   pushd $app_directory
-    cf push $app_name --no-start $args
+    cf push $app_name --no-start ${args}
     cf enable-diego $app_name
     cf start $app_name
   popd
@@ -42,6 +43,12 @@ function add_multiple_routes() {
 
   cf map-route $app_name bosh-lite.com --hostname $app_route1
   cf map-route $app_name bosh-lite.com --hostname $app_route2
+}
+
+function create_route() {
+	declare host=$1
+
+	cf create-route $SPACE bosh-lite.com -n $host
 }
 
 function create_managed_service_instance() {
@@ -81,6 +88,21 @@ function push_app_with_syslog_drain() {
   cf restart $app_name
 }
 
+function set_ports() {
+	declare app_name=$1 ports=$2
+
+	guid=$(cf app ${app_name} --guid)
+	cf curl /v2/apps/${guid} -X PUT -d "{\"ports\": ${ports}}"
+}
+
+function add_route_with_port() {
+	declare app_name=$1 route=$2 port=$3
+
+	app_guid=$(cf app ${app_name} --guid)
+	route_guid=$(cf curl /v2/routes?q=host:${route} | jq -r '.resources[0].metadata.guid')
+	cf curl /v2/route_mappings -X POST -d "{\"app_port\": ${port}, \"app_guid\": \"${app_guid}\", \"route_guid\": \"${route_guid}\"}"
+}
+
 function main() {
   push_service_broker
   create_managed_service_instance $SERVICE
@@ -110,6 +132,16 @@ function main() {
   push_diego_app $TASK_APP
   push_diego_app $BUILDPACK_APP_TO_REPUSH_WITH_V3
   push_diego_app $DOCKER_APP_TO_REPUSH_WITH_V3 "-o cloudfoundry/diego-docker-app:latest"
+	
+	nothing_to_see_here=$app_directory
+	app_directory="assets/lattice-app"
+
+	push_diego_app $DIEGO_APP_WITH_MULTIPLE_PORTS '-u none --no-route'
+	create_route $DIEGO_APP_WITH_MULTIPLE_PORTS
+	set_ports $DIEGO_APP_WITH_MULTIPLE_PORTS "[9090, 9191]"
+	add_route_with_port $DIEGO_APP_WITH_MULTIPLE_PORTS $DIEGO_APP_WITH_MULTIPLE_PORTS 9191
+
+  app_directory=$nothing_to_see_here
 }
 
 source scripts/setup-env.sh

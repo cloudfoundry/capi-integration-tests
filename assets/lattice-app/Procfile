@@ -1,0 +1,1 @@
+web: lattice-app --ports=9090,9191

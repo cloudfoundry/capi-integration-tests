@@ -55,3 +55,11 @@ type MetadataStruct struct {
 type SyslogDrainUrls struct {
 	Results map[string][]string `json:"results"`
 }
+
+type V2App struct {
+	Entity V2AppEntity `json:"entity"`
+}
+
+type V2AppEntity struct {
+	Ports []int `json:"ports"`
+}
