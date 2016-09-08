@@ -18,7 +18,7 @@ import (
 )
 
 var _ = Describe("Using v3 endpoints", func() {
-	Context("V3 App", func() {
+	Context("For apps pushed using v2 before the migration", func() {
 		var appGuid string
 		var appName string
 
@@ -248,6 +248,19 @@ var _ = Describe("Using v3 endpoints", func() {
 			Expect(task.Command).To(Equal("echo 0"))
 			Expect(task.Name).To(Equal("mreow"))
 			Expect(task.State).To(Equal("RUNNING"))
+		})
+	})
+
+	Context("Apps pushed using V3 before the migration", func() {
+		It("should truncate all pre-migration v3 app data", func() {
+			AppsJsonResponse := cf.Cf("curl", "/v3/apps/").Wait(DEFAULT_TIMEOUT)
+
+			var apps AppsResource
+			Expect(AppsJsonResponse).To(Exit(0))
+			err := json.Unmarshal(AppsJsonResponse.Out.Contents(), &apps)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(apps.Pagination.TotalResults).To(Equal(0))
 		})
 	})
 })
