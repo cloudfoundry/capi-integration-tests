@@ -7,8 +7,6 @@ import (
 	"testing"
 )
 
-const ()
-
 func TestMigration(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Migration Suite")
