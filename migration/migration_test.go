@@ -134,4 +134,28 @@ var _ = Describe("V2 behavior with DEA backend", func() {
 			return helpers.CurlAppRoot(appName)
 		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
 	})
+
+	It("can stage and start an app that was unstaged before the migration", func() {
+		appName := os.Getenv("UNSTAGED_APP")
+
+		Expect(cf.Cf("start", appName).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+
+		Eventually(func() string {
+			return helpers.CurlAppRoot(appName)
+		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
+	})
+
+	It("can start an app that was stopped before the migration", func() {
+		appName := os.Getenv("STOPPED_APP")
+
+		Eventually(func() string {
+			return helpers.CurlAppRoot(appName)
+		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("404"))
+
+		Expect(cf.Cf("start", appName).Wait(CF_PUSH_TIMEOUT)).To(Exit(0))
+
+		Eventually(func() string {
+			return helpers.CurlAppRoot(appName)
+		}, CF_PUSH_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora!"))
+	})
 })

@@ -1,12 +1,7 @@
 package resource_helpers
 
 type AppsResource struct {
-	Resources  []appResourceStruct `json:"resources"`
-	Pagination paginationStruct    `json:"pagination"`
-}
-
-type paginationStruct struct {
-	TotalResults int `json:"total_results"`
+	Resources []appResourceStruct `json:"resources"`
 }
 
 type appResourceStruct struct {

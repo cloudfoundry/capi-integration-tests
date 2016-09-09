@@ -228,6 +228,50 @@ var _ = Describe("Using v3 endpoints", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(env.Port).To(Equal("7070"))
 		})
+
+		It("can stage and run a previously unstaged app's package", func() {
+			appName = os.Getenv("UNSTAGED_APP_TO_STAGE_AND_START_WITH_V3")
+			appGuid = strings.TrimSpace(string(cf.Cf("app", appName, "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()))
+
+			packageJsonResponse := cf.Cf("curl", "/v3/apps/"+appGuid+"/packages").Wait(DEFAULT_TIMEOUT).Out.Contents()
+			packages := PackagesStruct{}
+
+			err := json.Unmarshal(packageJsonResponse, &packages)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(packages.Resources).To(HaveLen(1))
+			packageGuid := packages.Resources[0].Guid
+
+			dropletGuid := StageBuildpackPackage(packageGuid, "ruby_buildpack")
+			WaitForDropletToStage(dropletGuid)
+
+			AssignDropletToApp(appGuid, dropletGuid)
+
+			processes := GetProcesses(appGuid, appName)
+			webProcess := GetProcessByType(processes, "web")
+			Expect(webProcess.Guid).ToNot(BeEmpty())
+
+			StartApp(appGuid)
+
+			Eventually(func() string {
+				return helpers.CurlAppRoot(appName)
+			}, DEFAULT_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora"))
+		})
+
+		It("can run a previously stopped app", func() {
+			appName = os.Getenv("STOPPED_APP_TO_START_WITH_V3")
+			appGuid = strings.TrimSpace(string(cf.Cf("app", appName, "--guid").Wait(DEFAULT_TIMEOUT).Out.Contents()))
+
+			Eventually(func() string {
+				return helpers.CurlAppRoot(appName)
+			}, DEFAULT_TIMEOUT).Should(ContainSubstring("404"))
+
+			StartApp(appGuid)
+
+			Eventually(func() string {
+				return helpers.CurlAppRoot(appName)
+			}, DEFAULT_TIMEOUT).Should(ContainSubstring("Hi, I'm Dora"))
+		})
 	})
 
 	Context("Tasks", func() {
@@ -253,14 +297,10 @@ var _ = Describe("Using v3 endpoints", func() {
 
 	Context("Apps pushed using V3 before the migration", func() {
 		It("should truncate all pre-migration v3 app data", func() {
-			AppsJsonResponse := cf.Cf("curl", "/v3/apps/").Wait(DEFAULT_TIMEOUT)
+			appName := os.Getenv("V3_APP")
+			apps := cf.Cf("curl", "/v3/apps/").Wait(DEFAULT_TIMEOUT).Out.Contents()
 
-			var apps AppsResource
-			Expect(AppsJsonResponse).To(Exit(0))
-			err := json.Unmarshal(AppsJsonResponse.Out.Contents(), &apps)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(apps.Pagination.TotalResults).To(Equal(0))
+			Expect(apps).ToNot(ContainSubstring(appName))
 		})
 	})
 })
