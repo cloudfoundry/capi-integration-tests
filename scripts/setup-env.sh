@@ -29,6 +29,11 @@ export TASK_APP="task-app"
 export UNSTAGED_APP_TO_STAGE_AND_START_WITH_V3='unstaged-for-v3'
 export STOPPED_APP_TO_START_WITH_V3='stopped-for-v3'
 export V3_APP="pushed-with-v3"
+export JAVA_APP="java-app-start-command"
+export NODE_APP="node-app-start-command"
+export GOLANG_APP="golang-app-start-command"
+export PHP_APP="php-app-start-command"
+export PYTHON_APP="python-app-start-command"
 
 cf api $API_ENDPOINT --skip-ssl-validation
 cf auth admin admin

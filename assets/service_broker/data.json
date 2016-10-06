@@ -18,7 +18,7 @@
         "services": [
           {
             "name": "fake-service",
-            "id": "03c61931-8274-4232-a6e0-a9fc1e857e16",
+            "id": "4af73291-9792-44fc-96df-934847f2c344",
             "description": "fake service",
             "tags": [
               "no-sql",
@@ -41,15 +41,15 @@
               "displayName": "The Fake Broker"
             },
             "dashboard_client": {
-              "id": "d04a4dc1-631e-455a-9cd7-25137a627ec0",
-              "secret": "958b08d1-3737-4f28-a029-ed5d71520717",
+              "id": "1dbbedb5-ec0d-4648-b4b2-70167e6ef81e",
+              "secret": "8cf31a52-cd04-49df-88d2-96cc20281d4d",
               "redirect_uri": "http://localhost:5551"
             },
             "plan_updateable": true,
             "plans": [
               {
                 "name": "fake-plan",
-                "id": "e38ccf44-6a6a-4be9-a157-fbfc2302f56c",
+                "id": "4641bbea-137d-4ba3-a24b-65d13125f11a",
                 "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections",
                 "max_storage_tb": 5,
                 "metadata": {
@@ -69,7 +69,7 @@
               },
               {
                 "name": "fake-async-plan",
-                "id": "5dd842bd-645e-4180-a5df-d1c9cc2fa9ed",
+                "id": "1d7dd39a-62ca-4569-b068-d03e6ebe5dff",
                 "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async",
                 "max_storage_tb": 5,
                 "metadata": {
@@ -83,7 +83,7 @@
               },
               {
                 "name": "fake-async-only-plan",
-                "id": "408e788b-992d-438a-97db-c835239a425e",
+                "id": "e9b2c48f-b254-4e34-ad03-fc1014a246f3",
                 "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async",
                 "max_storage_tb": 5,
                 "metadata": {
@@ -107,13 +107,13 @@
         "body": {
         }
       },
-      "5dd842bd-645e-4180-a5df-d1c9cc2fa9ed": {
+      "1d7dd39a-62ca-4569-b068-d03e6ebe5dff": {
         "sleep_seconds": 0,
         "status": 202,
         "body": {
         }
       },
-      "408e788b-992d-438a-97db-c835239a425e": {
+      "e9b2c48f-b254-4e34-ad03-fc1014a246f3": {
         "async_only": true,
         "sleep_seconds": 0,
         "status": 202,
@@ -146,13 +146,13 @@
         "body": {
         }
       },
-      "5dd842bd-645e-4180-a5df-d1c9cc2fa9ed": {
+      "1d7dd39a-62ca-4569-b068-d03e6ebe5dff": {
         "sleep_seconds": 0,
         "status": 202,
         "body": {
         }
       },
-      "408e788b-992d-438a-97db-c835239a425e": {
+      "e9b2c48f-b254-4e34-ad03-fc1014a246f3": {
         "async_only": true,
         "sleep_seconds": 0,
         "status": 202,
@@ -167,13 +167,13 @@
         "body": {
         }
       },
-      "5dd842bd-645e-4180-a5df-d1c9cc2fa9ed": {
+      "1d7dd39a-62ca-4569-b068-d03e6ebe5dff": {
         "sleep_seconds": 0,
         "status": 202,
         "body": {
         }
       },
-      "408e788b-992d-438a-97db-c835239a425e": {
+      "e9b2c48f-b254-4e34-ad03-fc1014a246f3": {
         "async_only": true,
         "sleep_seconds": 0,
         "status": 202,

@@ -22,6 +22,16 @@ function push_diego_app() {
   popd
 }
 
+function push_app_from_path() {
+  declare app_name=$1 path=$2
+
+  pushd ${path}
+    cf push $app_name --no-start
+    cf enable-diego $app_name
+    cf start $app_name
+  popd
+}
+
 function push_unstaged_app() {
   declare app_name=$1 diego=$2
 
@@ -173,6 +183,12 @@ function main() {
   app_directory=$nothing_to_see_here
 
   push_v3_app $V3_APP
+
+  push_app_from_path $JAVA_APP 'assets/java'
+  push_app_from_path $NODE_APP 'assets/node'
+  push_app_from_path $GOLANG_APP 'assets/golang'
+  push_app_from_path $PHP_APP 'assets/php'
+  push_app_from_path $PYTHON_APP 'assets/python'
 }
 
 source scripts/setup-env.sh

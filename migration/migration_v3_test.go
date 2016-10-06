@@ -3,6 +3,7 @@ package migration_test
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -56,7 +57,9 @@ var _ = Describe("Using v3 endpoints", func() {
 			err = json.Unmarshal(dropletJsonResponse, &droplet)
 			Expect(err).NotTo(HaveOccurred())
 
-			dropletPath := droplet.Links.Self["href"]
+			dropletUrl, err := url.Parse(droplet.Links.Self["href"])
+			Expect(err).NotTo(HaveOccurred())
+			dropletPath := dropletUrl.Path
 
 			Eventually(func() *Session {
 				session := cf.Cf("curl", dropletPath).Wait(DEFAULT_TIMEOUT)
